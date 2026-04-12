@@ -1,0 +1,38 @@
+volumes:
+  pg_data:
+  static:
+  media:
+
+services:
+  postgres:
+    image: postgres:13
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    image: lenevi/kittygram_backend:latest
+    env_file: .env
+    volumes:
+      - static:/app/collected_static
+      - media:/app/media
+    depends_on:
+      - postgres
+
+  frontend:
+    image: lenevi/kittygram_frontend:latest
+    command: >
+      sh -c "cp -r /app/build/static/. /static/ &&
+             cp /app/build/index.html /app/build/asset-manifest.json /app/build/favicon.ico /app/build/manifest.json /app/build/robots.txt /static/"
+    volumes:
+      - static:/static
+
+  gateway:
+    image: lenevi/kittygram_gateway:latest
+    ports:
+      - "9000:80"
+    volumes:
+      - static:/static
+      - media:/media
+    depends_on:
+      - backend
